@@ -131,7 +131,7 @@ export default function Diagnostic() {
         tools: form.tools,
       })
 
-      setReportId(analysisResult.report_id)
+      setReportId(analysisResult.id)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ошибка при отправке")
     } finally {

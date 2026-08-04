@@ -26,7 +26,7 @@ export const api = {
     request<{ user_id: number; lead_id: number }>("/leads/diagnostic", { method: "POST", body: JSON.stringify(data) }),
 
   analyzeBusiness: (userId: number, data: Record<string, unknown>) =>
-    request<{ report_id: number; user_id: number; analysis: Record<string, unknown> }>(`/analyze/${userId}`, { method: "POST", body: JSON.stringify(data) }),
+    request<{ id: number; user_id: number; report_json: Record<string, unknown> }>(`/analyze/${userId}`, { method: "POST", body: JSON.stringify(data) }),
 
   getReport: (reportId: number) =>
     request<Report>(`/reports/${reportId}`),
