@@ -8,6 +8,7 @@ from app.database.models.lead import Lead
 from app.database.models.user import User
 from app.modules.leads.repository import LeadRepository
 from app.modules.leads.schemas import DiagnosticData, LeadCreate, LeadRead, LeadWithUser
+from app.modules.auth.security import hash_password
 
 
 class LeadService:
@@ -73,13 +74,21 @@ class LeadService:
         return result.scalar() or 0
 
     async def submit_diagnostic(self, data: DiagnosticData) -> dict:
-        user = User(
-            name=data.name,
-            email=data.email,
-            telegram_username=data.telegram,
-        )
-        self.db.add(user)
-        await self.db.flush()
+        # Check if user already exists by email
+        result = await self.db.execute(select(User).where(User.email == data.email))
+        user = result.scalar_one_or_none()
+        
+        if not user:
+            import secrets
+            temp_password = secrets.token_urlsafe(16)
+            user = User(
+                name=data.name,
+                email=data.email,
+                telegram_username=data.telegram,
+                password_hash=hash_password(temp_password),
+            )
+            self.db.add(user)
+            await self.db.flush()
 
         profile = BusinessProfile(
             user_id=user.id,
