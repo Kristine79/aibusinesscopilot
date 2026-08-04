@@ -19,6 +19,9 @@ dist/
 .env.local
 .env.production
 
+# Vercel
+.vercel/
+
 # IDE
 .vscode/
 .idea/
