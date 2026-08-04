@@ -66,9 +66,16 @@ export default function Diagnostic() {
 
   const validateStep = () => {
     setError("")
-    if (step === 1 && (!form.name || !form.email)) {
-      setError("Заполните имя и email")
-      return false
+    if (step === 1) {
+      if (!form.name || !form.email) {
+        setError("Заполните имя и email")
+        return false
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(form.email)) {
+        setError("Введите корректный email")
+        return false
+      }
     }
     if (step === 2 && !form.businessType) {
       setError("Выберите тип бизнеса")

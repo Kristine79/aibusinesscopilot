@@ -103,6 +103,8 @@ class LeadService:
         self.db.add(lead)
         await self.db.flush()
 
+        await self.db.commit()
+
         return {
             "user_id": user.id,
             "lead_id": lead.id,
