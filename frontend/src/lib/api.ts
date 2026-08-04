@@ -3,13 +3,20 @@ import type { AnalyticsSummary, Lead, Report } from "@/types"
 const API_URL = import.meta.env.VITE_API_URL || "/api"
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const url = `${API_URL}${path}`
+  const body = options?.body
+  console.log(`[API] ${options?.method || "GET"} ${url}`, body)
+  const res = await fetch(url, {
     headers: { "Content-Type": "application/json", ...options?.headers },
     ...options,
   })
   if (!res.ok) {
     const error = await res.json().catch(() => ({ detail: res.statusText }))
-    throw new Error(error.detail || `Request failed: ${res.status}`)
+    console.error(`[API ERROR] ${res.status}`, error)
+    const message = Array.isArray(error.detail)
+      ? error.detail.map((e: { loc?: string[]; msg?: string }) => `${e.loc?.join(".")}: ${e.msg}`).join("; ")
+      : error.detail || `Request failed: ${res.status}`
+    throw new Error(message)
   }
   return res.json()
 }
