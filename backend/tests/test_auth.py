@@ -171,11 +171,11 @@ class TestTokenSecurity:
         assert payload.get("sub") is not None
 
     async def test_invalid_signature(self, client: AsyncClient):
-        import jwt as pyjwt
+        from jose import jwt as jose_jwt
 
-        bad_token = pyjwt.encode(
+        bad_token = jose_jwt.encode(
             {"sub": "1", "type": "access", "exp": 9999999999},
-            "wrong-secret",
+            "wrong-secret-that-is-longer-than-thirty-two-chars",
             algorithm="HS256",
         )
         resp = await client.get("/api/auth/me", headers={"Authorization": f"Bearer {bad_token}"})

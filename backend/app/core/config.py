@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     DATABASE_SYNC_URL: str = "postgresql://postgres:postgres@db:5432/aibusinesscopilot"
 
     # Security
-    SECRET_KEY: str = "change-me-in-production"
+    SECRET_KEY: str = "change-me-in-production-change-me-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 

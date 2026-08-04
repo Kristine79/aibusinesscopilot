@@ -195,6 +195,19 @@ Services will be available at:
 
 ---
 
+## Testing
+
+```bash
+cd backend
+# Рекомендуется Python 3.12 (совпадает с Docker-образом)
+python -m venv .venv
+.venv/Scripts/pip install -r requirements-dev.txt   # Windows
+# .venv/bin/pip install -r requirements-dev.txt     # Linux/macOS
+.venv/Scripts/python -m pytest tests/ -q            # Windows
+```
+
+---
+
 ## Demo Scenario
 
 ```

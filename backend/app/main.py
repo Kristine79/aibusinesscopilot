@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 from app.api.v1 import analyses, analytics, health, knowledge, leads, users
 from app.api.v1.analyses import analyze_router
+from app.api.v1.health import record_startup
 from app.modules.auth.router import router as auth_router
 from app.modules.workspace.router import router as workspace_router
 from app.modules.agents.router import router as agents_router
@@ -34,6 +35,7 @@ async def lifespan(app: FastAPI):
     logger.info("CORS Origins: %s", settings.BACKEND_CORS_ORIGINS)
 
     validate_environment()
+    record_startup()
 
     logger.info("Run migrations: cd backend && alembic upgrade head")
     logger.info("API docs: http://localhost:%d/docs", settings.BACKEND_PORT)

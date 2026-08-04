@@ -2,7 +2,7 @@ import logging
 import time
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import select, text
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.session import get_db
@@ -13,8 +13,7 @@ router = APIRouter(tags=["health"])
 start_time: float = 0.0
 
 
-@router.on_event("startup")
-async def record_startup():
+def record_startup():
     global start_time
     start_time = time.time()
 

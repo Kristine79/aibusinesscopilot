@@ -160,16 +160,15 @@ class AIProvider(ABC):
 
 ```
 1. Document Ingestion:
-   Document → Chunking (500 chars) → Mock Embedding → Store in DB
+   Document → Chunking (500 chars) → Embedding (OpenAI text-embedding-3-small,
+   fallback MockEmbedding без API-ключа) → Store in DB
 
 2. Query Flow:
    User Query → Embed query → Cosine Similarity Search
    → Top 5 chunks → Build context → LLM with context → Answer
 
-3. Future: Replace mock embeddings with:
-   - OpenAI Embeddings API (text-embedding-3-small)
-   - pgvector for native vector search
-   - GIN index on content for hybrid search
+3. Future: миграция с JSON-массивов на нативный pgvector VECTOR тип
+   и GIN index на content для hybrid search
 ```
 
 ---
@@ -229,11 +228,13 @@ modules/
 ## Security
 
 - CORS configured via `BACKEND_CORS_ORIGINS`
-- JWT token support (ready, not enforced on all endpoints)
+- JWT token support (access + refresh, refresh хранится в БД хешем)
 - AI Provider API keys stored in environment variables
 - Passwords hashed via bcrypt (via passlib)
 - SQLAlchemy ORM prevents SQL injection
-- Rate limiting recommended for production (not yet implemented)
+- Rate limiting via SlowAPI (default 60 req/min per IP)
+- Security headers middleware (nosniff, X-Frame-Options, HSTS, no-store)
+- Global exception handler (без утечки деталей ошибок в ответе)
 
 ---
 
@@ -262,12 +263,12 @@ docker compose --env-file .env.production up -d
 
 ### Production Checklist
 
-- [ ] Replace `create_all` with Alembic migrations
-- [ ] Add authentication middleware
-- [ ] Add rate limiting
-- [ ] Replace mock embeddings with real embeddings
-- [ ] Use production-grade WSGI (gunicorn + uvicorn workers)
-- [ ] Frontend production build (npm run build)
-- [ ] Add `.dockerignore` files
+- [x] Replace `create_all` with Alembic migrations
+- [x] Add authentication middleware
+- [x] Add rate limiting
+- [x] Replace mock embeddings with real embeddings (fallback сохранён для dev)
+- [x] Use production-grade WSGI (gunicorn + uvicorn workers)
+- [x] Add `.dockerignore` files
 - [ ] Configure logging aggregation
-- [ ] Add monitoring and alerting
+- [ ] Add monitoring and alerting (Prometheus, Grafana)
+- [ ] CI/CD pipeline

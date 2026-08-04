@@ -20,13 +20,16 @@ from app.modules.auth.security import (
     verify_password,
 )
 
-security_scheme = HTTPBearer()
+security_scheme = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> UserRead:
+    if credentials is None:
+        raise UnauthorizedError()
+
     payload = decode_access_token(credentials.credentials)
     if payload is None:
         raise UnauthorizedError("Invalid or expired token")

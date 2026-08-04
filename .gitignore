@@ -9,6 +9,10 @@ env/
 # Node
 node_modules/
 dist/
+*.tsbuildinfo
+
+# Python test cache
+.pytest_cache/
 
 # Environment
 .env

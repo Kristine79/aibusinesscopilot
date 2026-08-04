@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 def validate_environment() -> list[str]:
     warnings: list[str] = []
 
-    if settings.SECRET_KEY == "change-me-in-production":
+    if settings.SECRET_KEY == "change-me-in-production-change-me-in-production":
         warnings.append("SECRET_KEY is using default value — change it in production")
 
     if not settings.OPENAI_API_KEY and not settings.OPENROUTER_API_KEY:
