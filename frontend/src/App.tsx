@@ -9,6 +9,10 @@ const Diagnostic = lazy(() => import("@/pages/Diagnostic"))
 const ReportView = lazy(() => import("@/pages/ReportView"))
 const LoginPage = lazy(() => import("@/pages/LoginPage"))
 const RegisterPage = lazy(() => import("@/pages/RegisterPage"))
+const PrivacyPage = lazy(() => import("@/pages/PrivacyPage").then((m) => ({ default: m.PrivacyPage })))
+const TermsPage = lazy(() => import("@/pages/TermsPage").then((m) => ({ default: m.TermsPage })))
+const BlogPage = lazy(() => import("@/pages/BlogPage").then((m) => ({ default: m.BlogPage })))
+const BlogPostPage = lazy(() => import("@/pages/BlogPostPage").then((m) => ({ default: m.BlogPostPage })))
 const Dashboard = lazy(() => import("@/pages/Dashboard"))
 const LeadsPage = lazy(() => import("@/pages/LeadsPage"))
 const ReportsPage = lazy(() => import("@/pages/ReportsPage"))
@@ -32,6 +36,10 @@ export default function App() {
             <Route path="/report/:id" element={<ReportView />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/blog/:slug" element={<BlogPostPage />} />
             <Route
               path="/dashboard"
               element={

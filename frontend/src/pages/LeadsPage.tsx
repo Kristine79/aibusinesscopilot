@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from "react"
+import { useTranslation } from "react-i18next"
 import { api } from "@/lib/api"
+import { tBusinessType } from "@/lib/i18n"
 import type { Lead } from "@/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -15,13 +17,6 @@ import { Loader2, AlertCircle, ChevronLeft, ChevronRight, Users } from "lucide-r
 
 const PAGE_SIZE = 10
 
-const statusLabels: Record<string, string> = {
-  new: "Новый",
-  in_progress: "В работе",
-  completed: "Завершен",
-  archived: "В архиве",
-}
-
 const statusVariant: Record<string, "warning" | "default" | "success" | "secondary"> = {
   new: "warning",
   in_progress: "default",
@@ -29,15 +24,23 @@ const statusVariant: Record<string, "warning" | "default" | "success" | "seconda
   archived: "secondary",
 }
 
-const statuses = Object.keys(statusLabels)
+const statuses = ["new", "in_progress", "completed", "archived"]
 
 export default function LeadsPage() {
+  const { t, i18n } = useTranslation()
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [updatingId, setUpdatingId] = useState<number | null>(null)
+
+  const statusLabels: Record<string, string> = {
+    new: t("leads.status.new"),
+    in_progress: t("leads.status.in_progress"),
+    completed: t("leads.status.completed"),
+    archived: t("leads.status.archived"),
+  }
 
   const fetchLeads = useCallback(async (skip: number) => {
     setLoading(true)
@@ -47,7 +50,7 @@ export default function LeadsPage() {
       setLeads(data)
       setHasMore(data.length === PAGE_SIZE)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка загрузки заявок")
+      setError(err instanceof Error ? err.message : t("leads.loadError"))
     } finally {
       setLoading(false)
     }
@@ -90,31 +93,31 @@ export default function LeadsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Leads</h1>
+      <h1 className="text-2xl font-bold">{t("leads.title")}</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>Все заявки</CardTitle>
+          <CardTitle>{t("leads.allLeads")}</CardTitle>
         </CardHeader>
         <CardContent>
           {leads.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
               <Users className="h-12 w-12" />
-              <p className="text-lg font-medium">Нет заявок</p>
-              <p className="text-sm">Заявки пока не поступали</p>
+              <p className="text-lg font-medium">{t("leads.noLeads")}</p>
+              <p className="text-sm">{t("leads.noLeadsHint")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-left text-muted-foreground">
-                    <th className="whitespace-nowrap pb-3 pr-4 font-medium">ID</th>
-                    <th className="whitespace-nowrap pb-3 pr-4 font-medium">Имя</th>
-                    <th className="whitespace-nowrap pb-3 pr-4 font-medium">Email</th>
-                    <th className="whitespace-nowrap pb-3 pr-4 font-medium">Бизнес</th>
-                    <th className="whitespace-nowrap pb-3 pr-4 font-medium">Команда</th>
-                    <th className="whitespace-nowrap pb-3 pr-4 font-medium">Статус</th>
-                    <th className="whitespace-nowrap pb-3 font-medium">Дата</th>
+                    <th className="whitespace-nowrap pb-3 pr-4 font-medium">{t("leads.table.id")}</th>
+                    <th className="whitespace-nowrap pb-3 pr-4 font-medium">{t("leads.table.name")}</th>
+                    <th className="whitespace-nowrap pb-3 pr-4 font-medium">{t("leads.table.email")}</th>
+                    <th className="whitespace-nowrap pb-3 pr-4 font-medium">{t("leads.table.business")}</th>
+                    <th className="whitespace-nowrap pb-3 pr-4 font-medium">{t("leads.table.team")}</th>
+                    <th className="whitespace-nowrap pb-3 pr-4 font-medium">{t("leads.table.status")}</th>
+                    <th className="whitespace-nowrap pb-3 font-medium">{t("leads.table.date")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -131,7 +134,7 @@ export default function LeadsPage() {
                         {lead.user_email || "—"}
                       </td>
                       <td className="whitespace-nowrap py-3 pr-4">
-                        {lead.business_type || "—"}
+                        {tBusinessType(lead.business_type || "—")}
                       </td>
                       <td className="whitespace-nowrap py-3 pr-4">
                         {lead.team_size ? `${lead.team_size} чел.` : "—"}
@@ -142,7 +145,7 @@ export default function LeadsPage() {
                           onValueChange={(value) => handleStatusChange(lead.id, value)}
                           disabled={updatingId === lead.id}
                         >
-                          <SelectTrigger className="h-7 w-32 text-xs">
+                          <SelectTrigger className="h-7 w-32 text-xs" aria-label={t("leads.table.status")}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -162,7 +165,7 @@ export default function LeadsPage() {
                         </Select>
                       </td>
                       <td className="whitespace-nowrap py-3 text-muted-foreground">
-                        {new Date(lead.created_at).toLocaleDateString("ru-RU")}
+                        {new Date(lead.created_at).toLocaleDateString(i18n.language)}
                       </td>
                     </tr>
                   ))}
@@ -174,7 +177,7 @@ export default function LeadsPage() {
           {leads.length > 0 && (
             <div className="flex items-center justify-between pt-4">
               <p className="text-sm text-muted-foreground">
-                Страница {page + 1}
+                {t("leads.page", { page: page + 1 })}
               </p>
               <div className="flex gap-2">
                 <Button
@@ -184,7 +187,7 @@ export default function LeadsPage() {
                   disabled={page === 0 || loading}
                 >
                   <ChevronLeft className="mr-1 h-4 w-4" />
-                  Назад
+                  {t("leads.back")}
                 </Button>
                 <Button
                   variant="outline"
@@ -192,7 +195,7 @@ export default function LeadsPage() {
                   onClick={() => setPage((p) => p + 1)}
                   disabled={!hasMore || loading}
                 >
-                  Вперед
+                  {t("leads.forward")}
                   <ChevronRight className="ml-1 h-4 w-4" />
                 </Button>
               </div>

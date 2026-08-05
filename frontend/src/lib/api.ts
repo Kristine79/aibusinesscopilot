@@ -15,7 +15,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     console.error(`[API ERROR] ${res.status}`, error)
     const message = Array.isArray(error.detail)
       ? error.detail.map((e: { loc?: string[]; msg?: string }) => `${e.loc?.join(".")}: ${e.msg}`).join("; ")
-      : error.detail || `Request failed: ${res.status}`
+      : error.detail || `Запрос не выполнен: ${res.status}`
     throw new Error(message)
   }
   return res.json()
@@ -56,7 +56,7 @@ export const api = {
     request<unknown>("/knowledge/reindex", { method: "POST" }),
 
   chatQuery: (message: string) =>
-    request<{ answer: string }>("/knowledge/chat", { method: "POST", body: JSON.stringify({ message }) }),
+    request<{ answer: string; sources: string[] }>("/knowledge/chat", { method: "POST", body: JSON.stringify({ message }) }),
 }
 
 export type { AnalyticsSummary, Lead, Report }

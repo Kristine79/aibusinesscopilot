@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { api } from "@/lib/api"
+import { tBusinessType } from "@/lib/i18n"
 import type { AnalyticsSummary } from "@/types"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Loader2, AlertCircle, BarChart3 } from "lucide-react"
@@ -20,14 +22,15 @@ import {
 
 const COLORS = ["#6366f1", "#8b5cf6", "#a855f7", "#d946ef", "#ec4899", "#f43f5e"]
 
-const statusLabels: Record<string, string> = {
-  new: "Новый",
-  in_progress: "В работе",
-  completed: "Завершен",
-  archived: "В архиве",
+const statusKeys: Record<string, string> = {
+  new: "analytics.status.new",
+  in_progress: "analytics.status.in_progress",
+  completed: "analytics.status.completed",
+  archived: "analytics.status.archived",
 }
 
 export default function AnalyticsPage() {
+  const { t } = useTranslation()
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -42,7 +45,7 @@ export default function AnalyticsPage() {
         setSummary(data)
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Ошибка загрузки аналитики")
+          setError(err instanceof Error ? err.message : t("analytics.loadError"))
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -78,25 +81,25 @@ export default function AnalyticsPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <BarChart3 className="h-6 w-6 text-indigo-600" />
-        <h1 className="text-2xl font-bold">Аналитика</h1>
+        <h1 className="text-2xl font-bold">{t("analytics.title")}</h1>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Типы бизнеса</CardTitle>
+            <CardTitle>{t("analytics.businessTypes")}</CardTitle>
             <CardDescription>
-              Распределение по типам бизнеса
+              {t("analytics.businessTypesDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {summary.business_type_distribution.length === 0 ? (
               <div className="flex h-64 items-center justify-center text-muted-foreground">
-                <p className="text-sm">Нет данных</p>
+                <p className="text-sm">{t("analytics.noData")}</p>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={summary.business_type_distribution}>
+                <BarChart data={summary.business_type_distribution.map((d) => ({ ...d, name: tBusinessType(d.name) }))}>
                   <XAxis
                     dataKey="name"
                     tick={{ fontSize: 12 }}
@@ -116,15 +119,15 @@ export default function AnalyticsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Статусы заявок</CardTitle>
+            <CardTitle>{t("analytics.leadStatuses")}</CardTitle>
             <CardDescription>
-              Распределение по статусам
+              {t("analytics.leadStatusesDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {summary.leads_by_status.length === 0 ? (
               <div className="flex h-64 items-center justify-center text-muted-foreground">
-                <p className="text-sm">Нет данных</p>
+                <p className="text-sm">{t("analytics.noData")}</p>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
@@ -132,7 +135,7 @@ export default function AnalyticsPage() {
                   <Pie
                     data={summary.leads_by_status.map((s) => ({
                       ...s,
-                      name: statusLabels[s.name] || s.name,
+                      name: t(statusKeys[s.name] || s.name),
                     }))}
                     dataKey="count"
                     nameKey="name"
@@ -159,15 +162,15 @@ export default function AnalyticsPage() {
 
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Анализы по дням</CardTitle>
+            <CardTitle>{t("analytics.reportsByDay")}</CardTitle>
             <CardDescription>
-              Динамика создания отчетов
+              {t("analytics.reportsByDayDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {summary.reports_by_day.length === 0 ? (
               <div className="flex h-64 items-center justify-center text-muted-foreground">
-                <p className="text-sm">Нет данных</p>
+                <p className="text-sm">{t("analytics.noData")}</p>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={300}>

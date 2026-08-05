@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { trackEvent } from "@/lib/analytics";
 
 interface User {
   id: number;
@@ -115,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTokens(data.access_token, data.refresh_token);
     const user = await apiRequest<User>("/auth/me", {}, data.access_token);
     setState((prev) => ({ ...prev, user }));
+    trackEvent("login_completed");
   }, [setTokens]);
 
   const register = useCallback(async (name: string, email: string, password: string) => {
@@ -125,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTokens(data.access_token, data.refresh_token);
     const user = await apiRequest<User>("/auth/me", {}, data.access_token);
     setState((prev) => ({ ...prev, user }));
+    trackEvent("signup_completed");
   }, [setTokens]);
 
   const logout = useCallback(async () => {

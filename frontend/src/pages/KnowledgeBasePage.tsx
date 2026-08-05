@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { api } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, AlertCircle, FileText, Trash2, RefreshCw, Plus, BookOpen } from "lucide-react"
+import { Loader2, AlertCircle, FileText, Trash2, RefreshCw, Plus, BookOpen, Upload } from "lucide-react"
 
 interface Document {
   id: number
@@ -15,6 +16,7 @@ interface Document {
 }
 
 export default function KnowledgeBasePage() {
+  const { t, i18n } = useTranslation()
   const [documents, setDocuments] = useState<Document[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -24,6 +26,7 @@ export default function KnowledgeBasePage() {
   const [docType, setDocType] = useState("markdown")
   const [showForm, setShowForm] = useState(false)
   const [creating, setCreating] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchDocuments = async () => {
     setLoading(true)
@@ -32,7 +35,7 @@ export default function KnowledgeBasePage() {
       const data = await api.listDocuments()
       setDocuments(data as Document[])
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка загрузки")
+      setError(err instanceof Error ? err.message : t("knowledge.loadError"))
     } finally {
       setLoading(false)
     }
@@ -50,18 +53,20 @@ export default function KnowledgeBasePage() {
       setShowForm(false)
       await fetchDocuments()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка создания")
+      setError(err instanceof Error ? err.message : t("knowledge.createError"))
     } finally {
       setCreating(false)
     }
   }
 
   const handleDelete = async (id: number) => {
+    const doc = documents.find((d) => d.id === id)
+    if (!window.confirm(t("knowledge.deleteConfirm", { title: doc?.title || String(id) }))) return
     try {
       await api.deleteDocument(id)
       setDocuments((prev) => prev.filter((d) => d.id !== id))
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка удаления")
+      setError(err instanceof Error ? err.message : t("knowledge.deleteError"))
     }
   }
 
@@ -70,10 +75,26 @@ export default function KnowledgeBasePage() {
     try {
       await api.reindexDocuments()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка переиндексации")
+      setError(err instanceof Error ? err.message : t("knowledge.reindexError"))
     } finally {
       setReindexing(false)
     }
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const text = String(reader.result || "")
+      setTitle(file.name.replace(/\.(txt|md|markdown)$/i, ""))
+      setContent(text)
+      setDocType(file.name.toLowerCase().endsWith(".txt") ? "txt" : "markdown")
+      setShowForm(true)
+    }
+    reader.onerror = () => setError(t("knowledge.uploadError"))
+    reader.readAsText(file)
+    e.target.value = ""
   }
 
   if (loading && documents.length === 0) {
@@ -89,16 +110,27 @@ export default function KnowledgeBasePage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <BookOpen className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold">Knowledge Base</h1>
+          <h1 className="text-2xl font-bold">{t("knowledge.title")}</h1>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleReindex} disabled={reindexing}>
             <RefreshCw className={`mr-2 h-4 w-4 ${reindexing ? "animate-spin" : ""}`} />
-            Переиндексировать
+            {t("knowledge.reindex")}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".txt,.md,.markdown"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="mr-2 h-4 w-4" />
+            {t("knowledge.uploadFile")}
           </Button>
           <Button size="sm" onClick={() => setShowForm(!showForm)}>
             <Plus className="mr-2 h-4 w-4" />
-            Добавить документ
+            {t("knowledge.addDocument")}
           </Button>
         </div>
       </div>
@@ -113,19 +145,19 @@ export default function KnowledgeBasePage() {
       {showForm && (
         <Card>
           <CardHeader>
-            <CardTitle>Новый документ</CardTitle>
+            <CardTitle>{t("knowledge.newDocument")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Название</label>
+              <label className="text-sm font-medium">{t("knowledge.fieldTitle")}</label>
               <Input
-                placeholder="Введите название документа"
+                placeholder={t("knowledge.titlePlaceholder")}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Тип</label>
+              <label className="text-sm font-medium">{t("knowledge.type")}</label>
               <select
                 className="flex h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-sm"
                 value={docType}
@@ -137,10 +169,10 @@ export default function KnowledgeBasePage() {
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Содержание</label>
+              <label className="text-sm font-medium">{t("knowledge.content")}</label>
               <textarea
                 className="flex min-h-[120px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-sm"
-                placeholder="Введите текст документа..."
+                placeholder={t("knowledge.contentPlaceholder")}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
               />
@@ -148,9 +180,9 @@ export default function KnowledgeBasePage() {
             <div className="flex gap-2">
               <Button onClick={handleCreate} disabled={creating || !title || !content}>
                 {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Сохранить
+                {t("knowledge.save")}
               </Button>
-              <Button variant="outline" onClick={() => setShowForm(false)}>Отмена</Button>
+              <Button variant="outline" onClick={() => setShowForm(false)}>{t("knowledge.cancel")}</Button>
             </div>
           </CardContent>
         </Card>
@@ -160,8 +192,8 @@ export default function KnowledgeBasePage() {
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
             <FileText className="h-12 w-12" />
-            <p className="text-lg font-medium">Нет документов</p>
-            <p className="text-sm">Добавьте документы в базу знаний</p>
+            <p className="text-lg font-medium">{t("knowledge.noDocs")}</p>
+            <p className="text-sm">{t("knowledge.noDocsHint")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -174,11 +206,16 @@ export default function KnowledgeBasePage() {
                   <div className="mt-1 flex items-center gap-2">
                     <Badge variant="secondary" className="text-[10px]">{doc.doc_type}</Badge>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(doc.created_at).toLocaleDateString("ru-RU")}
+                      {new Date(doc.created_at).toLocaleDateString(i18n.language)}
                     </span>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(doc.id)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDelete(doc.id)}
+                  aria-label={t("knowledge.deleteDoc", { title: doc.title })}
+                >
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </CardHeader>

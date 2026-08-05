@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { api } from "@/lib/api"
+import { computeReadinessScore, scoreLevel } from "@/lib/report-score"
 import type { Report, Opportunity, RoadmapItem } from "@/types"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Loader2, AlertCircle, ArrowLeft, Lightbulb, Route, FileText } from "lucide-react"
+import { AlertCircle, ArrowLeft, Lightbulb, Route, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const priorityVariant: Record<string, "warning" | "default" | "success" | "destructive"> = {
@@ -13,6 +15,12 @@ const priorityVariant: Record<string, "warning" | "default" | "success" | "destr
   medium: "warning",
   high: "destructive",
   critical: "destructive",
+}
+
+const priorityKey: Record<string, string> = {
+  low: "reportView.low",
+  medium: "reportView.medium",
+  high: "reportView.high",
 }
 
 interface ReportAnalysis {
@@ -25,6 +33,7 @@ export default function ReportDetailPage() {
   const { id } = useParams<{ id: string }>()
   const reportId = id
   const navigate = useNavigate()
+  const { t, i18n } = useTranslation()
   const [report, setReport] = useState<Report | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -42,7 +51,7 @@ export default function ReportDetailPage() {
         setReport(data)
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Ошибка загрузки отчета")
+          setError(err instanceof Error ? err.message : t("reportDetail.loadError"))
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -57,8 +66,13 @@ export default function ReportDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="space-y-6">
+        <div className="h-8 w-48 animate-pulse rounded-lg bg-muted" />
+        <div className="h-32 animate-pulse rounded-xl bg-muted" />
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="h-64 animate-pulse rounded-xl bg-muted" />
+          <div className="h-64 animate-pulse rounded-xl bg-muted" />
+        </div>
       </div>
     )
   }
@@ -75,6 +89,8 @@ export default function ReportDetailPage() {
   if (!report) return null
 
   const analysis = report.report_json as unknown as ReportAnalysis
+  const score = computeReadinessScore(report)
+  const level = scoreLevel(score)
 
   return (
     <div className="space-y-6">
@@ -83,14 +99,20 @@ export default function ReportDetailPage() {
           variant="ghost"
           size="icon"
           onClick={() => navigate("/dashboard/reports")}
+          aria-label={t("reportDetail.back")}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div>
-          <h1 className="text-2xl font-bold">Отчет #{report.id}</h1>
+        <div className="flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-bold">{t("reportDetail.title", { id: report.id })}</h1>
+            <Badge>{score} / 100</Badge>
+            <Badge variant={level === "high" ? "success" : level === "medium" ? "warning" : "destructive"}>
+              {t(`score.${level}`)}
+            </Badge>
+          </div>
           <p className="text-sm text-muted-foreground">
-            {new Date(report.created_at).toLocaleDateString("ru-RU")} &middot; User #
-            {report.user_id}
+            {new Date(report.created_at).toLocaleDateString(i18n.language)} &middot; {t("reportDetail.user", { id: report.user_id })}
           </p>
         </div>
       </div>
@@ -99,12 +121,12 @@ export default function ReportDetailPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-indigo-600" />
-            Сводка
+            {t("reportDetail.summary")}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            {analysis?.summary || "Нет данных"}
+            {analysis?.summary || t("reportDetail.noData")}
           </p>
         </CardContent>
       </Card>
@@ -114,16 +136,16 @@ export default function ReportDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Lightbulb className="h-5 w-5 text-amber-600" />
-              Возможности
+              {t("reportDetail.opportunities")}
             </CardTitle>
             <CardDescription>
-              {analysis?.opportunities?.length || 0} найдено
+              {t("reportDetail.opportunitiesFound", { count: analysis?.opportunities?.length || 0 })}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {!analysis?.opportunities || analysis.opportunities.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Возможности не найдены
+                {t("reportDetail.noOpportunities")}
               </p>
             ) : (
               analysis.opportunities.map((opp, i) => (
@@ -133,24 +155,24 @@ export default function ReportDetailPage() {
                     <Badge
                       variant={priorityVariant[opp.priority] || "secondary"}
                     >
-                      {opp.priority}
+                      {t(priorityKey[opp.priority] || opp.priority)}
                     </Badge>
                   </div>
                   <p className="mb-1 text-sm text-muted-foreground">
                     <span className="font-medium text-foreground">
-                      Решение:
+                      {t("reportDetail.solution")}
                     </span>{" "}
                     {opp.solution}
                   </p>
                   <p className="mb-1 text-sm text-muted-foreground">
                     <span className="font-medium text-foreground">
-                      Инструменты:
+                      {t("reportDetail.tools")}
                     </span>{" "}
                     {opp.tools}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     <span className="font-medium text-foreground">
-                      Экономия:
+                      {t("reportDetail.savings")}
                     </span>{" "}
                     {opp.time_saved}
                   </p>
@@ -164,16 +186,16 @@ export default function ReportDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Route className="h-5 w-5 text-emerald-600" />
-              Roadmap
+              {t("reportDetail.roadmap")}
             </CardTitle>
             <CardDescription>
-              {analysis?.roadmap?.length || 0} этапов
+              {t("reportDetail.roadmapStages", { count: analysis?.roadmap?.length || 0 })}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {!analysis?.roadmap || analysis.roadmap.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Roadmap не построен
+                {t("reportDetail.noRoadmap")}
               </p>
             ) : (
               <div className="relative space-y-0">
